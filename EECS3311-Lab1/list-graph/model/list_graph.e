@@ -197,6 +197,8 @@ feature -- Advanced Queries
 			queue : QUEUE [VERTEX[G]]
 			front : VERTEX[G]
 			visited : ARRAY [VERTEX[G]]
+			next : VERTEX[G]
+			counter : INTEGER
 			-- Include declarations for local variables used here
 		do
 			create visited.make_empty
@@ -204,29 +206,23 @@ feature -- Advanced Queries
 			create queue.make_empty
 
 			from
-			queue.enqueue (src)
+				queue.enqueue (src)
+				visited := <<src>>
+				counter := 1
 			until
-			queue.is_empty
+				queue.is_empty
 			loop
 				front := queue.first
 				queue.dequeue
 				across 1|..| front.outgoing_sorted.count as i loop
-					if not(visited.has (front.outgoing_sorted[i.item].destination)) then
-					visited.force (front.outgoing_sorted[i.item].destination,i.item)
-					queue.enqueue (front.outgoing_sorted[i.item].destination)
-					end
-
-					if front.outgoing_sorted.count ~ 0 then
-						across 1|..| front.incoming.count as j loop
-							if not(visited.has (front.incoming[j.item].source)) then
-								queue.enqueue (front.incoming[j.item].source)
-							end
-						end
-
+					next := front.outgoing_sorted[i.item].destination
+					if not(visited.has (next)) then
+						counter := counter + 1
+						visited.force (next, counter)
+						queue.enqueue (next)
 					end
 				end
 			end
-
 
 			create Result.make_from_array (visited) -- Included for compilation
 
@@ -246,7 +242,7 @@ feature -- commands
 			vertices.force (a_vertex)
 		ensure
 			cl_add_vertex_membership: has_vertex (a_vertex) -- To Do.
-			cl_add_vertex_others_unchanged:  True -- To Do. DO THISSSSSS
+			cl_add_vertex_others_unchanged: edges.count = old edges.count
 			cl_add_vertex_count: vertex_count = old vertex_count + 1
 		end
 
@@ -260,22 +256,39 @@ feature -- commands
 			src, dst: VERTEX [G]
 			new_edge: EDGE [G]
 		do
-			across 1 |..| vertices.count as i loop
-				if vertices[i.item].is_equal (a_edge.destination) and not(vertices[i.item].has_incoming_edge (a_edge)) then
-				vertices[i.item].add_edge (a_edge)
+
+				 src := a_edge.source
+				 dst := a_edge.destination
+
+				across 1 |..| vertices.count as i loop
+
+					-- '~' checks all varibles/attributes of objects
+					-- '=' compares addresses of objects for non primatives
+					-- is_equal checks both ~ and =.
+					if vertices[i.item] ~ a_edge.source then
+						if not (vertices[i.item] = a_edge.source) then
+							src := vertices[i.item]
+						end
+					end
+
+					if vertices[i.item] ~ a_edge.destination then
+						if not (vertices[i.item] = a_edge.destination) then
+							dst := vertices[i.item]
+						end
+					end
 				end
 
-				if vertices[i.item].is_equal (a_edge.source) and not(vertices[i.item].has_outgoing_edge (a_edge)) then
-				vertices[i.item].add_edge (a_edge)
+				create new_edge.make (src,dst)
+
+				across 1 |..| vertices.count as i loop
+					if vertices[i.item] ~ a_edge.source or vertices[i.item] ~ a_edge.destination then
+						vertices[i.item].add_edge (new_edge)
+					end
 				end
-			end
-
-
-			-- To Do.
 
 		ensure
 			cl_add_edge_membership: has_edge(a_edge) -- To Do.
-			cl_add_edge_others_unchanged: True -- To Do.
+			cl_add_edge_others_unchanged: vertices.count = old vertices.count -- To Do.
 			cl_add_edge_count: edge_count = old edge_count + 1
 		end
 
@@ -287,16 +300,33 @@ feature -- commands
 			cl_existing_edge: has_edge (a_edge)
 		local
 			src, dst: VERTEX [G]
+			new_edge : EDGE[G]
 		do
+			src := a_edge.source
+			dst := a_edge.destination
+
+			across 1|..| vertices.count as i loop
+
+				if vertices[i.item] ~ a_edge.source and vertices[i.item].has_outgoing_edge (a_edge) then
+					if not(vertices[i.item] = a_edge.source) then
+						src := vertices[i.item]
+					end
+				end
+
+				if vertices[i.item] ~ a_edge.destination and vertices[i.item].has_incoming_edge (a_edge)  then
+					if not (vertices[i.item] = a_edge.destination) then
+						dst := a_edge.destination
+					end
+				end
+			end
+
+			create new_edge.make (src,dst)
+
 			across 1 |..| vertices.count as i  loop
-				if vertices[i.item].is_equal (a_edge.source) and vertices[i.item].has_outgoing_edge (a_edge)  then
-					vertices[i.item].remove_edge (a_edge)
+				if vertices[i.item] ~ (a_edge.source) and vertices[i.item].has_outgoing_edge (a_edge) or
+				(vertices[i.item] ~ (a_edge.destination) and vertices[i.item].has_incoming_edge (a_edge))  then
+					vertices[i.item].remove_edge (new_edge)
 				end
-
-				if vertices[i.item].is_equal (a_edge.destination) and vertices[i.item].has_incoming_edge (a_edge)  then
-					vertices[i.item].remove_edge (a_edge)
-				end
-
 			end
 				-- To Do.
 		ensure
@@ -311,26 +341,31 @@ feature -- commands
 		local
 			l_edge: EDGE [G]
 			v: VERTEX [G]
-		do
+			offset : INTEGER
+			do
 			across 1|..| vertices.count as i loop
-				across 1|..| vertices[i.item].outgoing.count as j loop
-					if vertices[i.item].outgoing[j.item].destination ~ a_vertex or vertices[i.item].outgoing[j.item].source ~ a_vertex then
-						vertices[i.item].remove_edge (vertices[i.item].outgoing[j.item])
-					end
-				end
+			  offset := 0
+			  across 1|..| vertices[i.item].outgoing.count as j loop
+			    if not (vertices[i.item].outgoing.count = 0) then
+				    if vertices[i.item].outgoing[j.item - offset].destination ~ a_vertex or vertices[i.item].outgoing[j.item - offset].source ~ a_vertex then
+				      vertices[i.item].remove_edge (vertices[i.item].outgoing[j.item - offset])
+				      offset := offset + 1
+				    end
+			    end
+			  end
 
-				across 1|..| vertices[i.item].incoming.count as j loop
-					if vertices[i.item].incoming[j.item].destination ~ a_vertex or vertices[i.item].incoming[j.item].source ~ a_vertex then
-						vertices[i.item].remove_edge (vertices[i.item].incoming[j.item])
-					end
-				end
-
-				if vertices[i.item].is_equal (a_vertex) then
-					vertices[i.item].outgoing.wipe_out
-					vertices[i.item].incoming.wipe_out
-				end
+			  offset :=0
+			  across 1|..| vertices[i.item].incoming.count as j loop
+			    if not (vertices[i.item].incoming.count = 0) then
+				    if vertices[i.item].incoming[j.item-offset].destination ~ a_vertex or vertices[i.item].incoming[j.item - offset].source ~ a_vertex then
+				      vertices[i.item].remove_edge (vertices[i.item].incoming[j.item - offset])
+				      offset := offset + 1
+				    end
+			    end
+			  end
 			end
-				vertices.prune_all(a_vertex)
+			  vertices.prune_all(a_vertex)
+
 		ensure
 			cl_remove_vertex_count: vertex_count = old vertex_count - 1
 			cl_remove_vertex_membership: not has_vertex (a_vertex)

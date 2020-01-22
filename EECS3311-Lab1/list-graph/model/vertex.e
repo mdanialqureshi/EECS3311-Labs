@@ -205,13 +205,25 @@ feature -- commands
 	remove_edge(a_edge: EDGE[G])
 		require
 			a_edge.source ~ Current or a_edge.destination ~ Current
+		local
+			in_edge : EDGE[G]
+			out_edge : EDGE[G]
 		do
 
 			-- Todo: complete implementation
+
 			if a_edge.destination ~ Current then
+				if not(a_edge.destination = Current) then
+					create in_edge.make (a_edge.source, Current)
+					incoming.prune_all (in_edge)
+				end
 				incoming.prune_all (a_edge)
 			end
 			if a_edge.source ~ Current then
+				if not(a_edge.source = Current) then
+					create out_edge.make (Current, a_edge.destination)
+					outgoing.prune_all (out_edge)
+				end
 				outgoing.prune_all (a_edge)
 			end
 
