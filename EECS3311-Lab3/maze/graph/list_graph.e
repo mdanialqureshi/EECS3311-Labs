@@ -365,7 +365,7 @@ feature -- commands
 
 				-- '~' checks all varibles/attributes of objects
 				-- '=' compares addresses of objects for non primatives
-				-- is_equal checks both ~ and =. i.e 2 references to same objectß
+				-- is_equal checks both ~ and =. i.e 2 references to same object
 				if vertices[i.item] ~ a_edge.source then
 					if not (vertices[i.item] = a_edge.source) then
 						src := vertices[i.item]

@@ -12,7 +12,7 @@ inherit
 			out
 		end
 create
-	make
+	make,make_empty
 
 
 feature {NONE} -- Initialization
@@ -41,6 +41,15 @@ feature {NONE} -- Initialization
 			last_coord := player_coord.deep_twin
 			draw_graph
 			init_player
+		end
+
+	make_empty
+		do
+			create maze_graph.make_empty
+			create last_coord.make ([0,0])
+			create player_coord.make ([0,0])
+			create maze_ascii.make_filled (" ", 0, 0)
+			create added_edges.make_empty
 		end
 
 feature -- Attributes
@@ -99,7 +108,7 @@ feature -- Commands
 			end
 			check_win -- Check if we have reached the last spot
 		end
-	
+
 
 	check_win
 			-- If the player has won, then they will leave through the exit

@@ -28,7 +28,7 @@ feature {NONE} -- Initialization
 			used_solve := false
 			aborted := false
 			create maze_generator.make
-			create maze_drawer.make (maze_generator.generate_new_maze (1))
+			create maze_drawer.make_empty
 			create player_location.make (1,1)
 			valid_move := true
 		end
@@ -138,11 +138,11 @@ feature -- model operations
 				create next_cor.make (1,1)
 				counter := 2
 
-				across 2 |..| shortest.count as i loop
+				across 2 |..| shortest.upper as i loop
 					create next_cor.make (shortest[i.item].item.row - shortest[i.item - 1].item.row,
 					shortest[i.item].item.col - shortest[i.item - 1].item.col)
 
-				--	print("row : " + next_cor.row.out +  " col :" + next_cor.col.out + " ")
+--					print("row : " + next_cor.row.out +  " col :" + next_cor.col.out + " ")
 --					maze_drawer.maze_ascii[2, 1][3] := 'o'
 --					maze_drawer.maze_ascii[3, 1][3] := 'o'
 --					maze_drawer.maze_ascii[4, 1][3] := 'o'
@@ -155,7 +155,6 @@ feature -- model operations
 							maze_drawer.maze_ascii[shortest[i.item].item.row + counter - 1, shortest[i.item].item.col][3] := 'o'
 
 					else -- north or south
---						print("Dest vertex row : " + shortest[i.item].item.row.out + " COLL: " + shortest[i.item].item.col.out + "%N")
 						maze_drawer.maze_ascii[shortest[i.item].item.row + counter, shortest[i.item].item.col][3] := 'o'
 						counter := counter + 1
 					end
@@ -226,17 +225,22 @@ feature -- queries
 						Result.append("Congratulations! You escaped the maze!")
 						Result.append ("%N  ")
 						in_game := false
-						msg := "Error! Not in a game."
+						msg := "ok"
 				end
 
 				if used_solve then
 					Result.append("Since you used the solution, no points are awarded.")
 					Result.append ("%N  ")
+					if maze_drawer.check_win_bool then
+						used_solve := false
+						abort
+					end
 				end
-
-				Result.append ("Game Number: " + game_number.out + "%N")
-				Result.append ("  ")
-				Result.append ("Score: " + points.out + " / " + total_score.out + "%N")
+				if not(aborted) then
+					Result.append ("Game Number: " + game_number.out + "%N")
+					Result.append ("  ")
+					Result.append ("Score: " + points.out + " / " + total_score.out + "%N")
+				end
 
 			end
 		end
@@ -269,8 +273,9 @@ feature{NONE} -- private queries
 				end
 		end
 
-		-- is this maze solvable ?
+
 	is_solvable : BOOLEAN
+		-- is this maze solvable ?
 		local
 			src : VERTEX[COORDINATE]
 			dst : VERTEX[COORDINATE]

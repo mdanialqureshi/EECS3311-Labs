@@ -4,7 +4,7 @@
 # files are. If nothing is added, current directory is used.
 # WARNING: While absolute paths are suported, the oracle may not play nicely
 # with them.
-root = "/Users/danialqureshi/Desktop/Third Year/Winter Semester/EECS3311/lab3/maze_game/tests/acceptance/student"
+root = "/Users/danialqureshi/Desktop/Third_Year/Winter_Semester/EECS3311/lab3/maze_game/tests/acceptance/student"
 
 # Specify files or directories (relative to root) of the acceptance tests.
 # NOTE: Tests can not be named test.expected.txt

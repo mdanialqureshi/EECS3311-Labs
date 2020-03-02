@@ -1,0 +1,9 @@
+new_game(hard)
+solve
+move(E)
+move(S)
+move(E)
+move(E)
+abort
+new_game(easy)
+abort
